@@ -1,0 +1,51 @@
+version: "3.0"
+
+networks:
+  travellist:
+    driver: bridge
+
+volumes:
+  app_data:
+
+services:
+  app:
+    build:
+      args:
+        user: abhi
+        uid: 1000
+      context: .
+    image: travellist
+    container_name: travellist-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - app_data:/var/www
+    networks:
+      - travellist
+
+  nginx:
+    image: nginx:1.17-alpine
+    container_name: travellist-nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - app_data:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d
+    networks:
+      - travellist
+  db:
+    image: mysql:5.7
+    container_name: travellist-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - travellist
